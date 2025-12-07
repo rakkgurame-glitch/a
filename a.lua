@@ -42,7 +42,7 @@ for i = 1, #remaining do
     local char = remaining:sub(i, i):lower()
     if keyMap[char] then
         -- delay acak 0.02–0.25 detik
-        local delay = math.random(20, 250) / 1000
+        local delay = math.random(20, 150) / 1000
 
         game:GetService("VirtualInputManager"):SendKeyEvent(true,  keyMap[char], false, game)
         task.wait(delay)
