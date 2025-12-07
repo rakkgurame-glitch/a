@@ -52,7 +52,7 @@ for i = 1, #remaining do
 end
 
 
-    task.wait(0.2)
+    task.wait(0.01)
     game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.Return, false, game)
     task.wait(0.03)
     game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.Return, false, game)
