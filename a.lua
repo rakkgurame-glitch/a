@@ -7,7 +7,7 @@ local Words = {}
 local usedWords = {} -- Tabel untuk menyimpan kata yang sudah dipakai berdasarkan prefix
 local loaded = false
 local minCharacters = 1
-local maxCharacters = 15
+local maxCharacters = 10
 
 -- HTTP request picker
 local function getRequestFunction()
@@ -41,9 +41,9 @@ local function AutoTypeText(alreadyTyped, fullWord)
         local char = remaining:sub(i, i):lower()
         if keyMap[char] then
             game:GetService("VirtualInputManager"):SendKeyEvent(true, keyMap[char], false, game)
-            task.wait(0.03)
+            task.wait(0.04)
             game:GetService("VirtualInputManager"):SendKeyEvent(false, keyMap[char], false, game)
-            task.wait(0.03)
+            task.wait(0.05)
         end
     end
 
