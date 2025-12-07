@@ -7,7 +7,7 @@ local Words = {}
 local usedWords = {} -- Tabel untuk menyimpan kata yang sudah dipakai berdasarkan prefix
 local loaded = false
 local minCharacters = 1
-local maxCharacters = 10
+local maxCharacters = 25
 
 -- HTTP request picker
 local function getRequestFunction()
@@ -34,18 +34,22 @@ local function AutoTypeText(alreadyTyped, fullWord)
         ["y"] = Enum.KeyCode.Y, ["z"] = Enum.KeyCode.Z,
         [" "] = Enum.KeyCode.Space
     }
+-- pastikan seed di-set sekali saja (bisa di paling atas script)
+math.randomseed(tick())
 
-    -- Hanya ketik bagian yang belum diketik
-    local remaining = fullWord:sub(#alreadyTyped + 1)
-    for i = 1, #remaining do
-        local char = remaining:sub(i, i):lower()
-        if keyMap[char] then
-            game:GetService("VirtualInputManager"):SendKeyEvent(true, keyMap[char], false, game)
-            task.wait(0.04)
-            game:GetService("VirtualInputManager"):SendKeyEvent(false, keyMap[char], false, game)
-            task.wait(0.05)
-        end
+local remaining = fullWord:sub(#alreadyTyped + 1)
+for i = 1, #remaining do
+    local char = remaining:sub(i, i):lower()
+    if keyMap[char] then
+        -- delay acak 0.02–0.25 detik
+        local delay = math.random(20, 250) / 1000
+
+        game:GetService("VirtualInputManager"):SendKeyEvent(true,  keyMap[char], false, game)
+        task.wait(delay)
+        game:GetService("VirtualInputManager"):SendKeyEvent(false, keyMap[char], false, game)
+        task.wait(delay)
     end
+end
 
 
     task.wait(0.2)
@@ -53,11 +57,11 @@ local function AutoTypeText(alreadyTyped, fullWord)
     task.wait(0.03)
     game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.Return, false, game)
 
-    for _ = 1, 15 do
+    for _ = 1, 10 do
         game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.Backspace, false, game)
-        task.wait(0.05)
+        task.wait(0.01)
         game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.Backspace, false, game)
-        task.wait(0.05)
+        task.wait(0.01)
     end
 end
 
