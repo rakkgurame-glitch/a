@@ -1,7 +1,7 @@
 -- Random Word Typer - Script Baru
 -- Fitur: Search -> Random Type -> Tidak pakai kata lagi -> Reset
 
-local url = "https://raw.githubusercontent.com/dwyl/english-words/refs/heads/master/words.txt"
+local url = "https://raw.githubusercontent.com/rakkgurame-glitch/a/refs/heads/main/word.txt"
 
 local Words = {}
 local usedWords = {} -- Tabel untuk menyimpan kata yang sudah dipakai berdasarkan prefix
