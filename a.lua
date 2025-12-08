@@ -1,7 +1,7 @@
 -- Random Word Typer - Script Baru
 -- Fitur: Search -> Random Type -> Tidak pakai kata lagi -> Reset
 
-local url = "https://raw.githubusercontent.com/rakkgurame-glitch/a/refs/heads/main/word.txt"
+local url = "https://raw.githubusercontent.com/rakkgurame-glitch/a/refs/heads/main/clean_valid_words.txt"
 
 local Words = {}
 local usedWords = {} -- Tabel untuk menyimpan kata yang sudah dipakai berdasarkan prefix
@@ -42,7 +42,7 @@ for i = 1, #remaining do
     local char = remaining:sub(i, i):lower()
     if keyMap[char] then
         -- delay acak 0.02–0.25 detik
-        local delay = math.random(20, 150) / 1000
+        local delay = math.random(40, 150) / 1000
 
         game:GetService("VirtualInputManager"):SendKeyEvent(true,  keyMap[char], false, game)
         task.wait(delay)
