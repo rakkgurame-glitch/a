@@ -83,7 +83,7 @@ local function LoadWords()
 
     local ok, result = pcall(function()
         local res = reqFunc({
-            Url = "https://raw.githubusercontent.com/dwyl/english-words/refs/heads/master/words_dictionary.json",
+            Url = "https://raw.githubusercontent.com/rakkgurame-glitch/a/refs/heads/main/words_dictionary.json",
             Method = "GET"
         })
         return (type(res) == "table" and res.Body) or res
