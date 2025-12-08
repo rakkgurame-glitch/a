@@ -40,7 +40,7 @@ local function AutoTypeText(alreadyTyped, fullWord)
     for i = 1, #remaining do
         local char = remaining:sub(i, i):lower()
         if keyMap[char] then
-            local delay = math.random(40, 150) / 1000
+            local delay = math.random(20, 120) / 1000
             vim:SendKeyEvent(true, keyMap[char], false, game)
             task.wait(delay)
             vim:SendKeyEvent(false, keyMap[char], false, game)
