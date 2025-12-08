@@ -1,6 +1,5 @@
--- Random Word Typer - Updated for JSON word list
--- Supports: Search prefix → Random unused word → Auto-type only remaining letters → Reset per prefix or all
--- Word source: https://raw.githubusercontent.com/dwyl/english-words/refs/heads/master/words_dictionary.json
+-- Random Word Typer - JSON + Clear Button
+-- Updated: Removed backspace from AutoType, added dedicated Clear button
 
 local Words = {}
 local usedWords = {}
@@ -8,10 +7,9 @@ local loaded = false
 local minCharacters = 1
 local maxCharacters = 25
 
--- Set random seed once
 math.randomseed(tick())
 
--- HTTP request picker (for various executors)
+-- HTTP request picker
 local function getRequestFunction()
     if syn and syn.request then return syn.request end
     if http and http.request then return http.request end
@@ -20,7 +18,7 @@ local function getRequestFunction()
     return nil
 end
 
--- Improved auto-typing: only types the part after alreadyTyped
+-- Auto-type only the new part (no backspace at end)
 local function AutoTypeText(alreadyTyped, fullWord)
     task.wait(0.12)
     
@@ -38,11 +36,11 @@ local function AutoTypeText(alreadyTyped, fullWord)
     }
 
     local remaining = fullWord:sub(#alreadyTyped + 1)
+    local vim = game:GetService("VirtualInputManager")
     for i = 1, #remaining do
         local char = remaining:sub(i, i):lower()
         if keyMap[char] then
             local delay = math.random(40, 150) / 1000
-            local vim = game:GetService("VirtualInputManager")
             vim:SendKeyEvent(true, keyMap[char], false, game)
             task.wait(delay)
             vim:SendKeyEvent(false, keyMap[char], false, game)
@@ -50,17 +48,21 @@ local function AutoTypeText(alreadyTyped, fullWord)
         end
     end
 
+    -- Press Enter
     task.wait(0.01)
-    local vim = game:GetService("VirtualInputManager")
     vim:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
     task.wait(0.03)
     vim:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+end
 
-    for _ = 1, 10 do
+-- 🔥 NEW: Dedicated clear function (15 backspaces)
+local function ClearText()
+    local vim = game:GetService("VirtualInputManager")
+    for _ = 1, 15 do
         vim:SendKeyEvent(true, Enum.KeyCode.Backspace, false, game)
-        task.wait(0.01)
+        task.wait(0.03)
         vim:SendKeyEvent(false, Enum.KeyCode.Backspace, false, game)
-        task.wait(0.01)
+        task.wait(0.04)
     end
 end
 
@@ -68,7 +70,7 @@ local function isValidWord(word)
     return word:match("^[a-zA-Z]+$") ~= nil
 end
 
--- 🔁 Load words from JSON
+-- Load words from JSON
 local function LoadWords()
     if loaded then return end
 
@@ -92,7 +94,6 @@ local function LoadWords()
         return
     end
 
-    -- Decode JSON
     local decoded
     ok, decoded = pcall(function()
         return httpService:JSONDecode(result)
@@ -108,7 +109,6 @@ local function LoadWords()
         return
     end
 
-    -- Extract words (keys)
     for word in pairs(decoded) do
         if type(word) == "string" and
            #word >= minCharacters and
@@ -122,7 +122,6 @@ local function LoadWords()
     print("[RandomWordTyper] Loaded", #Words, "words from JSON.")
 end
 
--- Start loading words in background
 spawn(LoadWords)
 
 -- === GUI ===
@@ -133,7 +132,7 @@ screen.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 pcall(function() screen.Parent = game.CoreGui end)
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 300, 0, 250) -- slightly taller
+frame.Size = UDim2.new(0, 300, 0, 250)
 frame.Position = UDim2.new(0.5, -150, 0.5, -125)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 frame.Active = true
@@ -166,7 +165,6 @@ Instance.new("UICorner", searchBox).CornerRadius = UDim.new(0, 8)
 
 searchBox.FocusLost:Connect(function(enterPressed)
     if enterPressed then
-        -- Trigger random button
         if _G.RandomButtonRef then
             _G.RandomButtonRef.MouseButton1Click:Fire()
         end
@@ -183,7 +181,7 @@ randomButton.Font = Enum.Font.GothamBold
 randomButton.TextSize = 16
 randomButton.Parent = frame
 Instance.new("UICorner", randomButton).CornerRadius = UDim.new(0, 8)
-_G.RandomButtonRef = randomButton -- for FocusLost trigger
+_G.RandomButtonRef = randomButton
 
 local resetButton = Instance.new("TextButton")
 resetButton.Size = UDim2.new(1, -20, 0, 30)
@@ -245,7 +243,6 @@ local function GetRandomWord(input)
         end
     end
 
-    -- Fallback to shorter prefixes if no matches
     if #pool == 0 then
         for i = #input - 1, 1, -1 do
             local shorter = input:sub(1, i)
@@ -279,7 +276,7 @@ randomButton.MouseButton1Click:Connect(function()
         return
     end
 
-    local input = searchBox.Text:match("^%s*(.-)%s*$") -- trim
+    local input = searchBox.Text:match("^%s*(.-)%s*$")
     if #input < 1 then
         status.Text = "Enter a prefix first!"
         return
@@ -315,7 +312,7 @@ resetAllButton.MouseButton1Click:Connect(function()
     status.Text = "✅ All prefixes reset!"
 end)
 
--- Toggle GUI button
+-- 🔘 Toggle GUI button (left top)
 local toggle = Instance.new("TextButton")
 toggle.Name = "Toggle"
 toggle.Size = UDim2.new(0, 50, 0, 50)
@@ -328,6 +325,27 @@ toggle.TextSize = 20
 toggle.Parent = screen
 Instance.new("UICorner", toggle).CornerRadius = UDim.new(0, 10)
 
+-- 🔘 NEW: Clear button (right top)
+local clearButton = Instance.new("TextButton")
+clearButton.Name = "ClearButton"
+clearButton.Size = UDim2.new(0, 50, 0, 50)
+clearButton.Position = UDim2.new(1, -60, 0, 10) -- 10px from right edge
+clearButton.BackgroundColor3 = Color3.fromRGB(220, 100, 100)
+clearButton.Text = "⌫"
+clearButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+clearButton.Font = Enum.Font.GothamBold
+clearButton.TextSize = 24
+clearButton.Parent = screen
+Instance.new("UICorner", clearButton).CornerRadius = UDim.new(0, 10)
+
+clearButton.MouseButton1Click:Connect(function()
+    status.Text = "🧹 Clearing text..."
+    ClearText()
+    task.wait(0.2)
+    status.Text = "Text cleared (15 backspaces)"
+end)
+
+-- Toggle visibility
 local guiEnabled = false
 frame.Visible = false
 
@@ -337,10 +355,5 @@ toggle.MouseButton1Click:Connect(function()
     toggle.Text = guiEnabled and "❌" or "🔀"
 end)
 
-print("✅ Random Word Typer (JSON) loaded!")
-print("💡 Features:")
-print(" - Type a prefix (e.g. 'comp')")
-print(" - Click 'Random Type' → auto-types full word (only new letters)")
-print(" - Words never repeat for the same prefix")
-print(" - Reset per prefix or all")
-print("🌐 Source: english-words JSON (466k+ words)")
+print("✅ Random Word Typer (JSON + Clear) loaded!")
+print("💡 Use '⌫' button in top-right to send 15 backspaces.")
