@@ -1,5 +1,5 @@
--- Random Word Typer - JSON + Clear Button
--- Updated: Removed backspace from AutoType, added dedicated Clear button
+-- Random Word Typer - Plain Text + Clear Button
+-- Updated: Removed JSON, now reads plain text (.txt)
 
 local Words = {}
 local usedWords = {}
@@ -36,35 +36,28 @@ local function AutoTypeText(alreadyTyped, fullWord)
     }
 
     local vim = game:GetService("VirtualInputManager")
-
-    -- sisa huruf yang belum diketik
     local remaining = fullWord:sub(#alreadyTyped + 1)
     local i = 1
+
     while i <= #remaining do
         local char = remaining:sub(i, i):lower()
 
-        -- 15% kemungkinan typo (1 huruf salah) pada huruf bukan spasi
+        -- 15% typo chance
         if char ~= " " and math.random() < 0.15 then
-            -- pilih tombol typo di dekatnya secara acak
             local typoKeys = {Enum.KeyCode.J, Enum.KeyCode.K, Enum.KeyCode.L, Enum.KeyCode.U, Enum.KeyCode.I, Enum.KeyCode.O}
             local typo = typoKeys[math.random(1, #typoKeys)]
 
-            -- ketik typo
             vim:SendKeyEvent(true, typo, false, game)
             task.wait(math.random(80, 120) / 1000)
             vim:SendKeyEvent(false, typo, false, game)
             task.wait(math.random(80, 120) / 1000)
 
-            -- hapus typo
             vim:SendKeyEvent(true, Enum.KeyCode.Backspace, false, game)
             task.wait(math.random(80, 120) / 1000)
             vim:SendKeyEvent(false, Enum.KeyCode.Backspace, false, game)
             task.wait(math.random(40, 70) / 1000)
-
-            -- tidak increment i, biar langsung ketik huruf yang benar di iterasi ini
         end
 
-        -- ketik huruf yang benar
         if keyMap[char] then
             vim:SendKeyEvent(true, keyMap[char], false, game)
             task.wait(math.random(35, 70) / 1000)
@@ -82,7 +75,7 @@ local function AutoTypeText(alreadyTyped, fullWord)
     vim:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
 end
 
--- 🔥 NEW: Dedicated clear function (15 backspaces)
+-- Clear text (15 backspaces)
 local function ClearText()
     local vim = game:GetService("VirtualInputManager")
     for _ = 1, 15 do
@@ -97,11 +90,10 @@ local function isValidWord(word)
     return word:match("^[a-zA-Z]+$") ~= nil
 end
 
--- Load words from JSON
+-- Load words from plain text (.txt)
 local function LoadWords()
     if loaded then return end
 
-    local httpService = game:GetService("HttpService")
     local reqFunc = getRequestFunction()
     if not reqFunc then
         warn("[RandomWordTyper] No HTTP function available.")
@@ -110,7 +102,7 @@ local function LoadWords()
 
     local ok, result = pcall(function()
         local res = reqFunc({
-            Url = "https://raw.githubusercontent.com/rakkgurame-glitch/a/refs/heads/main/words_dictionary.json",
+            Url = "https://raw.githubusercontent.com/dwyl/english-words/refs/heads/master/words.txt", -- ganti ini dengan link file .txt kamu
             Method = "GET"
         })
         return (type(res) == "table" and res.Body) or res
@@ -121,32 +113,16 @@ local function LoadWords()
         return
     end
 
-    local decoded
-    ok, decoded = pcall(function()
-        return httpService:JSONDecode(result)
-    end)
-
-    if not ok then
-        warn("[RandomWordTyper] JSON decode failed:", decoded)
-        return
-    end
-
-    if type(decoded) ~= "table" then
-        warn("[RandomWordTyper] JSON root is not a table")
-        return
-    end
-
-    for word in pairs(decoded) do
-        if type(word) == "string" and
-           #word >= minCharacters and
-           #word <= maxCharacters and
-           isValidWord(word) then
+    -- Parse plain text
+    for line in result:gmatch("[^\r\n]+") do
+        local word = line:match("^%s*(.-)%s*$") -- trim whitespace
+        if #word >= minCharacters and #word <= maxCharacters and isValidWord(word) then
             table.insert(Words, word:lower())
         end
     end
 
     loaded = #Words > 0
-    print("[RandomWordTyper] Loaded", #Words, "words from JSON.")
+    print("[RandomWordTyper] Loaded", #Words, "words from plain text.")
 end
 
 spawn(LoadWords)
