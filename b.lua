@@ -21,7 +21,7 @@ end
 -- Auto-type only the new part (no backspace at end)
 local function AutoTypeText(alreadyTyped, fullWord)
     task.wait(0.12)
-    
+
     local keyMap = {
         ["a"] = Enum.KeyCode.A, ["b"] = Enum.KeyCode.B, ["c"] = Enum.KeyCode.C,
         ["d"] = Enum.KeyCode.D, ["e"] = Enum.KeyCode.E, ["f"] = Enum.KeyCode.F,
@@ -35,20 +35,47 @@ local function AutoTypeText(alreadyTyped, fullWord)
         [" "] = Enum.KeyCode.Space
     }
 
-    local remaining = fullWord:sub(#alreadyTyped + 1)
     local vim = game:GetService("VirtualInputManager")
-    for i = 1, #remaining do
+
+    -- sisa huruf yang belum diketik
+    local remaining = fullWord:sub(#alreadyTyped + 1)
+    local i = 1
+    while i <= #remaining do
         local char = remaining:sub(i, i):lower()
-        if keyMap[char] then
-            local delay = math.random(20, 120) / 1000
-            vim:SendKeyEvent(true, keyMap[char], false, game)
-            task.wait(delay)
-            vim:SendKeyEvent(false, keyMap[char], false, game)
-            task.wait(delay)
+
+        -- 15% kemungkinan typo (1 huruf salah) pada huruf bukan spasi
+        if char ~= " " and math.random() < 0.15 then
+            -- pilih tombol typo di dekatnya secara acak
+            local typoKeys = {Enum.KeyCode.J, Enum.KeyCode.K, Enum.KeyCode.L, Enum.KeyCode.U, Enum.KeyCode.I, Enum.KeyCode.O}
+            local typo = typoKeys[math.random(1, #typoKeys)]
+
+            -- ketik typo
+            vim:SendKeyEvent(true, typo, false, game)
+            task.wait(math.random(80, 120) / 1000)
+            vim:SendKeyEvent(false, typo, false, game)
+            task.wait(math.random(80, 120) / 1000)
+
+            -- hapus typo
+            vim:SendKeyEvent(true, Enum.KeyCode.Backspace, false, game)
+            task.wait(math.random(80, 120) / 1000)
+            vim:SendKeyEvent(false, Enum.KeyCode.Backspace, false, game)
+            task.wait(math.random(40, 70) / 1000)
+
+            -- tidak increment i, biar langsung ketik huruf yang benar di iterasi ini
         end
+
+        -- ketik huruf yang benar
+        if keyMap[char] then
+            vim:SendKeyEvent(true, keyMap[char], false, game)
+            task.wait(math.random(35, 70) / 1000)
+            vim:SendKeyEvent(false, keyMap[char], false, game)
+            task.wait(math.random(35, 70) / 1000)
+        end
+
+        i = i + 1
     end
 
-    -- Press Enter
+    -- Enter
     task.wait(0.01)
     vim:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
     task.wait(0.03)
