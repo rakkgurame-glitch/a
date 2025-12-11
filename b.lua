@@ -18,7 +18,6 @@ local function getRequestFunction()
     return nil
 end
 
--- Auto-type only the new part (no backspace at end)
 local function AutoTypeText(alreadyTyped, fullWord)
     task.wait(0.12)
 
@@ -37,6 +36,7 @@ local function AutoTypeText(alreadyTyped, fullWord)
 
     local vim = game:GetService("VirtualInputManager")
     local remaining = fullWord:sub(#alreadyTyped + 1)
+    local typedCount = 0        -- hitung berapa karakter yang benar-benar terkirim
     local i = 1
 
     while i <= #remaining do
@@ -44,7 +44,8 @@ local function AutoTypeText(alreadyTyped, fullWord)
 
         -- 15% typo chance
         if char ~= " " and math.random() < 0.15 then
-            local typoKeys = {Enum.KeyCode.J, Enum.KeyCode.K, Enum.KeyCode.L, Enum.KeyCode.U, Enum.KeyCode.I, Enum.KeyCode.O}
+            local typoKeys = {Enum.KeyCode.J, Enum.KeyCode.K, Enum.KeyCode.L,
+                              Enum.KeyCode.U, Enum.KeyCode.I, Enum.KeyCode.O}
             local typo = typoKeys[math.random(1, #typoKeys)]
 
             vim:SendKeyEvent(true, typo, false, game)
@@ -63,6 +64,7 @@ local function AutoTypeText(alreadyTyped, fullWord)
             task.wait(math.random(35, 70) / 1000)
             vim:SendKeyEvent(false, keyMap[char], false, game)
             task.wait(math.random(35, 70) / 1000)
+            typedCount = typedCount + 1
         end
 
         i = i + 1
@@ -73,16 +75,13 @@ local function AutoTypeText(alreadyTyped, fullWord)
     vim:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
     task.wait(0.03)
     vim:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
-end
 
--- Clear text (15 backspaces)
-local function ClearText()
-    local vim = game:GetService("VirtualInputManager")
-    for _ = 1, 15 do
+    -- Langsung hapus semua yang baru diketik
+    for _ = 1, typedCount do
         vim:SendKeyEvent(true, Enum.KeyCode.Backspace, false, game)
-        task.wait(0.03)
+        task.wait(math.random(30, 50) / 1000)
         vim:SendKeyEvent(false, Enum.KeyCode.Backspace, false, game)
-        task.wait(0.04)
+        task.wait(math.random(30, 50) / 1000)
     end
 end
 
@@ -327,26 +326,6 @@ toggle.Font = Enum.Font.GothamBold
 toggle.TextSize = 20
 toggle.Parent = screen
 Instance.new("UICorner", toggle).CornerRadius = UDim.new(0, 10)
-
--- 🔘 NEW: Clear button (right top)
-local clearButton = Instance.new("TextButton")
-clearButton.Name = "ClearButton"
-clearButton.Size = UDim2.new(0, 50, 0, 50)
-clearButton.Position = UDim2.new(1, -60, 0, 10) -- 10px from right edge
-clearButton.BackgroundColor3 = Color3.fromRGB(220, 100, 100)
-clearButton.Text = "⌫"
-clearButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-clearButton.Font = Enum.Font.GothamBold
-clearButton.TextSize = 24
-clearButton.Parent = screen
-Instance.new("UICorner", clearButton).CornerRadius = UDim.new(0, 10)
-
-clearButton.MouseButton1Click:Connect(function()
-    status.Text = "🧹 Clearing text..."
-    ClearText()
-    task.wait(0.2)
-    status.Text = "Text cleared (15 backspaces)"
-end)
 
 -- Toggle visibility
 local guiEnabled = false
