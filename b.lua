@@ -86,7 +86,17 @@ local function AutoTypeText(alreadyTyped, fullWord)
 end
 
 local function isValidWord(word)
-    return word:match("^[a-zA-Z]+$") ~= nil
+    if word:match("^[a-zA-Z]+$") == nil then
+        return false
+    end
+
+    -- Cegah huruf yang sama di awal lebih dari 2 kali
+    local firstThree = word:sub(1, 2)
+    if #firstThree == 3 and firstThree:match("^(.)\1\1$") then
+        return false
+    end
+
+    return true
 end
 
 -- Load words from plain text (.txt)
