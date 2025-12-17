@@ -36,52 +36,57 @@ local function AutoTypeText(alreadyTyped, fullWord)
 
     local vim = game:GetService("VirtualInputManager")
     local remaining = fullWord:sub(#alreadyTyped + 1)
-    local typedCount = 0        -- hitung berapa karakter yang benar-benar terkirim
-    local i = 1
 
-    while i <= #remaining do
-        local char = remaining:sub(i, i):lower()
+    -- pastikan TextBox sudah fokus sebelumnya
+    local textBox = game:GetService("Players").LocalPlayer
+                  :WaitForChild("PlayerGui"):FindFirstChild("ScreenGui"):FindFirstChild("TextBox")
 
-        -- 15% typo chance
+    local function typeChar(char)
+        if keyMap[char] then
+            vim:SendKeyEvent(true,  keyMap[char], false, game)
+            task.wait(math.random(35, 70)/1000)
+            vim:SendKeyEvent(false, keyMap[char], false, game)
+            task.wait(math.random(35, 70)/1000)
+        end
+    end
+
+    -- ketik sisa kata
+    for i = 1, #remaining do
+        local char = remaining:sub(i,i):lower()
+
+        -- 15 % typo
         if char ~= " " and math.random() < 0.15 then
             local typoKeys = {Enum.KeyCode.J, Enum.KeyCode.K, Enum.KeyCode.L,
                               Enum.KeyCode.U, Enum.KeyCode.I, Enum.KeyCode.O}
             local typo = typoKeys[math.random(1, #typoKeys)]
-
-            vim:SendKeyEvent(true, typo, false, game)
-            task.wait(math.random(80, 120) / 1000)
+            vim:SendKeyEvent(true,  typo, false, game)
+            task.wait(math.random(80,120)/1000)
             vim:SendKeyEvent(false, typo, false, game)
-            task.wait(math.random(80, 120) / 1000)
+            task.wait(math.random(80,120)/1000)
 
-            vim:SendKeyEvent(true, Enum.KeyCode.Backspace, false, game)
-            task.wait(math.random(80, 120) / 1000)
+            vim:SendKeyEvent(true,  Enum.KeyCode.Backspace, false, game)
+            task.wait(math.random(80,120)/1000)
             vim:SendKeyEvent(false, Enum.KeyCode.Backspace, false, game)
-            task.wait(math.random(40, 70) / 1000)
+            task.wait(math.random(40, 70)/1000)
         end
 
-        if keyMap[char] then
-            vim:SendKeyEvent(true, keyMap[char], false, game)
-            task.wait(math.random(35, 70) / 1000)
-            vim:SendKeyEvent(false, keyMap[char], false, game)
-            task.wait(math.random(35, 70) / 1000)
-            typedCount = typedCount + 1
-        end
-
-        i = i + 1
+        typeChar(char)
     end
 
-    -- Enter
+    -- tekan Enter
     task.wait(0.01)
-    vim:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+    vim:SendKeyEvent(true,  Enum.KeyCode.Return, false, game)
     task.wait(0.03)
     vim:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
 
-    -- Langsung hapus semua yang baru diketik
-    for _ = 1, typedCount do
-        vim:SendKeyEvent(true, Enum.KeyCode.Backspace, false, game)
-        task.wait(math.random(30, 50) / 1000)
+    -- hapus SEMUA karakter yang sekarang ada di TextBox
+    task.wait(0.05)
+    local current = textBox and textBox.Text or ""
+    for _ = 1, #current do
+        vim:SendKeyEvent(true,  Enum.KeyCode.Backspace, false, game)
+        task.wait(math.random(30,50)/1000)
         vim:SendKeyEvent(false, Enum.KeyCode.Backspace, false, game)
-        task.wait(math.random(30, 50) / 1000)
+        task.wait(math.random(30,50)/1000)
     end
 end
 
