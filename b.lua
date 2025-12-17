@@ -111,7 +111,7 @@ local function LoadWords()
 
     local ok, result = pcall(function()
         local res = reqFunc({
-            Url = "https://raw.githubusercontent.com/rakkgurame-glitch/a/refs/heads/main/wlist_match1.txt", -- ganti ini dengan link file .txt kamu
+            Url = "https://raw.githubusercontent.com/dwyl/english-words/refs/heads/master/words_alpha.txt", -- ganti ini dengan link file .txt kamu
             Method = "GET"
         })
         return (type(res) == "table" and res.Body) or res
