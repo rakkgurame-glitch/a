@@ -5,7 +5,7 @@ local Words = {}
 local usedWords = {}
 local loaded = false
 local minCharacters = 1
-local maxCharacters = 25
+local maxCharacters = 100
 
 math.randomseed(tick())
 
@@ -36,57 +36,52 @@ local function AutoTypeText(alreadyTyped, fullWord)
 
     local vim = game:GetService("VirtualInputManager")
     local remaining = fullWord:sub(#alreadyTyped + 1)
+    local typedCount = 0        -- hitung berapa karakter yang benar-benar terkirim
+    local i = 1
 
-    -- pastikan TextBox sudah fokus sebelumnya
-    local textBox = game:GetService("Players").LocalPlayer
-                  :WaitForChild("PlayerGui"):FindFirstChild("ScreenGui"):FindFirstChild("TextBox")
+    while i <= #remaining do
+        local char = remaining:sub(i, i):lower()
 
-    local function typeChar(char)
-        if keyMap[char] then
-            vim:SendKeyEvent(true,  keyMap[char], false, game)
-            task.wait(math.random(35, 70)/1000)
-            vim:SendKeyEvent(false, keyMap[char], false, game)
-            task.wait(math.random(35, 70)/1000)
-        end
-    end
-
-    -- ketik sisa kata
-    for i = 1, #remaining do
-        local char = remaining:sub(i,i):lower()
-
-        -- 15 % typo
+        -- 15% typo chance
         if char ~= " " and math.random() < 0.15 then
             local typoKeys = {Enum.KeyCode.J, Enum.KeyCode.K, Enum.KeyCode.L,
                               Enum.KeyCode.U, Enum.KeyCode.I, Enum.KeyCode.O}
             local typo = typoKeys[math.random(1, #typoKeys)]
-            vim:SendKeyEvent(true,  typo, false, game)
-            task.wait(math.random(80,120)/1000)
-            vim:SendKeyEvent(false, typo, false, game)
-            task.wait(math.random(80,120)/1000)
 
-            vim:SendKeyEvent(true,  Enum.KeyCode.Backspace, false, game)
-            task.wait(math.random(80,120)/1000)
+            vim:SendKeyEvent(true, typo, false, game)
+            task.wait(math.random(80, 120) / 1000)
+            vim:SendKeyEvent(false, typo, false, game)
+            task.wait(math.random(80, 120) / 1000)
+
+            vim:SendKeyEvent(true, Enum.KeyCode.Backspace, false, game)
+            task.wait(math.random(80, 120) / 1000)
             vim:SendKeyEvent(false, Enum.KeyCode.Backspace, false, game)
-            task.wait(math.random(40, 70)/1000)
+            task.wait(math.random(40, 70) / 1000)
         end
 
-        typeChar(char)
+        if keyMap[char] then
+            vim:SendKeyEvent(true, keyMap[char], false, game)
+            task.wait(math.random(35, 70) / 1000)
+            vim:SendKeyEvent(false, keyMap[char], false, game)
+            task.wait(math.random(35, 70) / 1000)
+            typedCount = typedCount + 1
+        end
+
+        i = i + 1
     end
 
-    -- tekan Enter
+    -- Enter
     task.wait(0.01)
-    vim:SendKeyEvent(true,  Enum.KeyCode.Return, false, game)
+    vim:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
     task.wait(0.03)
     vim:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
 
-    -- hapus SEMUA karakter yang sekarang ada di TextBox
-    task.wait(0.05)
-    local current = textBox and textBox.Text or ""
-    for _ = 1, #current do
-        vim:SendKeyEvent(true,  Enum.KeyCode.Backspace, false, game)
-        task.wait(math.random(30,50)/1000)
+    -- Langsung hapus semua yang baru diketik
+    for _ = 1, typedCount + 5 do
+        vim:SendKeyEvent(true, Enum.KeyCode.Backspace, false, game)
+        task.wait(math.random(30, 50) / 1000)
         vim:SendKeyEvent(false, Enum.KeyCode.Backspace, false, game)
-        task.wait(math.random(30,50)/1000)
+        task.wait(math.random(30, 50) / 1000)
     end
 end
 
@@ -106,7 +101,7 @@ local function LoadWords()
 
     local ok, result = pcall(function()
         local res = reqFunc({
-            Url = "https://raw.githubusercontent.com/david47k/top-english-wordlists/refs/heads/master/top_english_words_lower_1000000.txt", -- ganti ini dengan link file .txt kamu
+            Url = "https://raw.githubusercontent.com/david47k/top-english-wordlists/refs/heads/master/top_english_nouns_lower_500000.txt", -- ganti ini dengan link file .txt kamu
             Method = "GET"
         })
         return (type(res) == "table" and res.Body) or res
