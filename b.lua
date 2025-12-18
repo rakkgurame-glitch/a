@@ -49,12 +49,12 @@ local function AutoTypeText(alreadyTyped, fullWord)
             local typo = typoKeys[math.random(1, #typoKeys)]
 
             vim:SendKeyEvent(true, typo, false, game)
-            task.wait(math.random(80, 120) / 1000)
+            task.wait(math.random(50, 120) / 1000)
             vim:SendKeyEvent(false, typo, false, game)
-            task.wait(math.random(80, 120) / 1000)
+            task.wait(math.random(50, 120) / 1000)
 
             vim:SendKeyEvent(true, Enum.KeyCode.Backspace, false, game)
-            task.wait(math.random(80, 120) / 1000)
+            task.wait(math.random(50, 120) / 1000)
             vim:SendKeyEvent(false, Enum.KeyCode.Backspace, false, game)
             task.wait(math.random(40, 70) / 1000)
         end
