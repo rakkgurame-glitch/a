@@ -1,34 +1,30 @@
--- =========================================
--- DEBUG: COPY RAW CurrentWord.Text TO CLIPBOARD
--- =========================================
-
+-- ✅ LOG ONLY: cek apakah CurrentWord ada & isinya apa
 local Players = game:GetService("Players")
 local lp = Players.LocalPlayer
 
-local function copyCurrentWordRaw()
-    local ok, text = pcall(function()
-        return lp.PlayerGui.InGame.Frame.CurrentWord.Text
+local function logCurrentWord()
+    local ok, gui = pcall(function()
+        return lp.PlayerGui:WaitForChild("InGame", 5)
+                           :WaitForChild("Frame", 5)
+                           :WaitForChild("CurrentWord", 5)
     end)
 
-    if not ok or not text then
-        if setclipboard then
-            setclipboard("[ERROR] Failed to read CurrentWord.Text")
+    if ok and gui then
+        print("[LOG] CurrentWord Text = '" .. gui.Text .. "'")
+        print("[LOG] CurrentWord FullPath = " .. gui:GetFullName())
+    else
+        warn("[LOG] CurrentWord TIDAK ditemukan!")
+        -- coba scan apa saja yang ada di PlayerGui
+        warn("[LOG] Isi PlayerGui:")
+        for _,v in ipairs(lp.PlayerGui:GetChildren()) do
+            warn("  - " .. v.Name .. " (" .. v.ClassName .. ")")
         end
-        return
-    end
-
-    if setclipboard then
-        setclipboard(text)
     end
 end
 
--- langsung copy saat script dijalankan
-copyCurrentWordRaw()
-
--- OPTIONAL: tekan F8 untuk copy ulang kapan saja
-game:GetService("UserInputService").InputBegan:Connect(function(input, gpe)
-    if gpe then return end
-    if input.KeyCode == Enum.KeyCode.F8 then
-        copyCurrentWordRaw()
-    end
-end)
+-- jalankan sekali + loop setiap 2 detik
+logCurrentWord()
+while true do
+    task.wait(2)
+    logCurrentWord()
+end
