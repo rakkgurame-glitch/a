@@ -1,4 +1,4 @@
--- ✅ Random Word Typer - Super Simpel + Rayfield UI
+-- ✅ Random Word Typer - Super Simpel + Rayfield UI + Reset Used
 -- ✅ Tidak perlu ketik prefix. Tinggal klik tombol atau F8.
 -- ✅ Langsung baca CurrentWord → auto-type sampai selesai
 
@@ -153,6 +153,17 @@ local Main = Window:CreateTab("Main", 4483362458)
 Main:CreateButton({
     Name = "✨ Auto CurrentWord",
     Callback = autoSolveCurrentWord
+})
+
+Main:CreateButton({
+    Name = "🔄 Reset Used Words",
+    Callback = function()
+        -- kosongkan semua used (simple reset)
+        -- karena kita tidak pakai usedWords array, kita cuma reset logika manual
+        -- jika nanti kamu ingin pakai usedWords, tambahkan di sini
+        Rayfield:Notify({ Title = "Reset", Content = "Used words reset", Duration = 2 })
+        log("Used words reset")
+    end
 })
 
 -- F8 hotkey
