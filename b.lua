@@ -32,18 +32,18 @@ end
 -- GET CURRENT WORD (DIRECT PATH)
 -- =========================================
 local function getCurrentWord()
-    local ok, txt = pcall(function()
+    local ok, text = pcall(function()
         return lp.PlayerGui.InGame.Frame.CurrentWord.Text
     end)
+    if not ok or not text then return nil end
 
-    if not ok or not txt then return nil end
+    -- ambil HANYA kata setelah "Word:"
+    local word = text:match("Word:%s*([A-Za-z]+)")
+    if not word then return nil end
 
-    -- bersihkan SEMUA karakter aneh
-    txt = txt:gsub("[%c%s]", ""):lower()
-
-    if txt == "" then return nil end
-    return txt
+    return word:lower()
 end
+
 
 -- =========================================
 -- LOAD WORDS
