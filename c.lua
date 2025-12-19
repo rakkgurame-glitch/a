@@ -1,18 +1,33 @@
--- ✅ Random Word Typer - Super Simpel
+-- ✅ Random Word Typer - Super Simpel + Rayfield UI
 -- ✅ Tidak perlu ketik prefix. Tinggal klik tombol atau F8.
 -- ✅ Langsung baca CurrentWord → auto-type sampai selesai
--- ✅ Tetap pakai typo 5%, backspace, enter, clear
 
-local Words = {}        -- tetap load untuk backup (kalau dibutuhkan nanti)
+-- Load Rayfield
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
+
+-- Services
+local Players = game:GetService("Players")
+local lp = Players.LocalPlayer
+local UserInput = game:GetService("UserInputService")
+local Vim = game:GetService("VirtualInputManager")
+
+-- Word list (backup only)
+local Words = {}
 local loaded = false
 math.randomseed(tick())
 
--- HTTP loader (backup)
-local function getReq()
-    return (syn and syn.request) or (http and http.request) or http_request or request or nil
+-- Logger
+local function log(msg)
+    print("[RWT] " .. msg)
 end
+local function errLog(msg)
+    warn("[RWT] ERROR: " .. msg)
+    Rayfield:Notify({ Title = "Error", Content = msg, Duration = 3 })
+end
+
+-- HTTP loader (backup)
 local function LoadWords()
-    local req = getReq()
+    local req = (syn and syn.request) or (http and http.request) or http_request or request
     if not req then return end
     local ok, res = pcall(function()
         return req({Url = "https://raw.githubusercontent.com/rakkgurame-glitch/a/refs/heads/main/words_alpha%20(1).txt", Method = "GET"}).Body
@@ -25,12 +40,12 @@ local function LoadWords()
             end
         end
         loaded = #Words > 0
-        print("[RWT] Backup words loaded: " .. #Words)
+        log("Backup words loaded: " .. #Words)
     end
 end
 spawn(LoadWords)
 
--- AutoType (tetap pakai typo, backspace, enter, clear)
+-- AutoType (typo 5%, backspace, enter, clear)
 local function AutoTypeText(alreadyTyped, fullWord)
     task.wait(0.12)
     local keyMap = {
@@ -99,50 +114,52 @@ local function GetCurrentWordLabel()
                            :WaitForChild("Frame", 5)
                            :WaitForChild("CurrentWord", 5)
     end)
-    return ok and gui or nil
+    if ok and gui then
+        log('CurrentWord = "' .. gui.Text .. '" at ' .. gui:GetFullName())
+        return gui
+    else
+        errLog("CurrentWord not found")
+        return nil
+    end
 end
 
 -- Auto solve (tanpa prefix)
 local function autoSolveCurrentWord()
     local label = GetCurrentWordLabel()
-    if not label then
-        warn("[RWT] CurrentWord not found")
-        return
-    end
+    if not label then return end
     local fullWord = label.Text:lower()
     while fullWord == "" or fullWord == "..." do
         task.wait()
         fullWord = label.Text:lower()
     end
-    print("[RWT] Auto-solving: " .. fullWord)
-    AutoTypeText(0, fullWord)   -- langsung type dari 0 sampai selesai
-    print("[RWT] Done: " .. fullWord)
+    log("Auto-solving: " .. fullWord)
+    Rayfield:Notify({ Title = "Typing", Content = fullWord, Duration = 1 })
+    AutoTypeText(0, fullWord)
+    log("Done: " .. fullWord)
+    Rayfield:Notify({ Title = "Done", Content = fullWord, Duration = 1 })
 end
 
--- GUI minimal
-local screen = Instance.new("ScreenGui")
-screen.Name = "SimpleRWT"
-screen.ResetOnSpawn = false
-pcall(function() screen.Parent = game.CoreGui end)
+-- Rayfield UI
+local Window = Rayfield:CreateWindow({
+    Name = "Random Word Typer",
+    LoadingTitle = "Loading script...",
+    LoadingSubtitle = "by kimi",
+    ConfigurationSaving = { Enabled = false },
+    DisableRayfieldPrompts = true,
+})
 
-local btn = Instance.new("TextButton")
-btn.Size = UDim2.new(0, 120, 0, 50)
-btn.Position = UDim2.new(0.5, -60, 0.5, -25)
-btn.Text = "✨ Auto Current"
-btn.BackgroundColor3 = Color3.fromRGB(60, 160, 240)
-btn.TextColor3 = Color3.white
-btn.Font = Enum.Font.GothamBold
-btn.TextSize = 16
-btn.Parent = screen
-Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 12)
+local Main = Window:CreateTab("Main", 4483362458)
 
-btn.MouseButton1Click:Connect(autoSolveCurrentWord)
+Main:CreateButton({
+    Name = "✨ Auto CurrentWord",
+    Callback = autoSolveCurrentWord
+})
 
 -- F8 hotkey
-game:GetService("UserInputService").InputBegan:Connect(function(inp, g)
+UserInput.InputBegan:Connect(function(inp, g)
     if g then return end
     if inp.KeyCode == Enum.KeyCode.F8 then autoSolveCurrentWord() end
 end)
 
-print("✅ Simple Random Word Typer loaded!")
-print("💡 Klik tombol atau F8 untuk auto-type CurrentWord")
+log("Script loaded. UI ready. Press F8 or use button.")
+Rayfield:Notify({ Title = "Ready", Content = "Press F8 or use button", Duration = 2 })
