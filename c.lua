@@ -3,7 +3,7 @@
 -- ✅ Langsung baca CurrentWord → auto-type sampai selesai
 
 -- Load Rayfield
-local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/main/source.lua'))()
 
 -- Services
 local Players = game:GetService("Players")
