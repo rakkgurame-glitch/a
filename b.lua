@@ -36,7 +36,9 @@ end
 -- =========================================================
 local function getCurrentWord()
     if CachedCurrentWordLabel and CachedCurrentWordLabel.Parent then
-        return CachedCurrentWordLabel.Text:match("^%s*(.-)%s*$")
+        local txt = CachedCurrentWordLabel.Text
+        txt = txt:gsub("[%c%s]+", "") -- 🔥 FIX UTAMA
+        return txt ~= "" and txt or nil
     end
 
     local ok, label = pcall(function()
@@ -47,9 +49,12 @@ local function getCurrentWord()
 
     if ok and label and label:IsA("TextLabel") then
         CachedCurrentWordLabel = label
-        return label.Text:match("^%s*(.-)%s*$")
+        local txt = label.Text
+        txt = txt:gsub("[%c%s]+", "")
+        return txt ~= "" and txt or nil
     end
 end
+
 
 -- =========================================================
 -- VALIDATION
