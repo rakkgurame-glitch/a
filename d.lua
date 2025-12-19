@@ -1,20 +1,15 @@
--- ✅ Random Word Typer - Super Simpel + Rayfield UI + Reset Used
+-- ✅ Random Word Typer - 1 Tombol + Auto CurrentWord + Rayfield
 -- ✅ Tidak perlu ketik prefix. Tinggal klik tombol atau F8.
--- ✅ Langsung baca CurrentWord → auto-type sampai selesai
+-- ✅ Langsung baca CurrentWord → auto-type semua huruf sampai selesai
 
 -- Load Rayfield
-local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/main/source.lua'))()
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
 
 -- Services
 local Players = game:GetService("Players")
 local lp = Players.LocalPlayer
 local UserInput = game:GetService("UserInputService")
 local Vim = game:GetService("VirtualInputManager")
-
--- Word list (backup only)
-local Words = {}
-local loaded = false
-math.randomseed(tick())
 
 -- Logger
 local function log(msg)
@@ -25,27 +20,7 @@ local function errLog(msg)
     Rayfield:Notify({ Title = "Error", Content = msg, Duration = 3 })
 end
 
--- HTTP loader (backup)
-local function LoadWords()
-    local req = (syn and syn.request) or (http and http.request) or http_request or request
-    if not req then return end
-    local ok, res = pcall(function()
-        return req({Url = "https://raw.githubusercontent.com/rakkgurame-glitch/a/refs/heads/main/words_alpha%20(1).txt", Method = "GET"}).Body
-    end)
-    if ok and res then
-        for line in res:gmatch("[^\r\n]+") do
-            local w = line:match("^%s*(.-)%s*$"):lower()
-            if #w >= 3 and #w <= 12 and w:match("^[a-z]+$") then
-                table.insert(Words, w)
-            end
-        end
-        loaded = #Words > 0
-        log("Backup words loaded: " .. #Words)
-    end
-end
-spawn(LoadWords)
-
--- AutoType (typo 5%, backspace, enter, clear)
+-- AutoType (typo 15%, backspace, enter, clear)
 local function AutoTypeText(alreadyTyped, fullWord)
     task.wait(0.12)
     local keyMap = {
@@ -68,8 +43,8 @@ local function AutoTypeText(alreadyTyped, fullWord)
 
     while i <= #remaining do
         local char = remaining:sub(i, i):lower()
-        -- 5% typo
-        if char ~= " " and math.random() < 0.05 then
+        -- 15% typo
+        if char ~= " " and math.random() < 0.15 then
             local typoKeys = {Enum.KeyCode.J, Enum.KeyCode.K, Enum.KeyCode.L,
                               Enum.KeyCode.U, Enum.KeyCode.I, Enum.KeyCode.O}
             local typo = typoKeys[math.random(1, #typoKeys)]
@@ -134,7 +109,7 @@ local function autoSolveCurrentWord()
     end
     log("Auto-solving: " .. fullWord)
     Rayfield:Notify({ Title = "Typing", Content = fullWord, Duration = 1 })
-    AutoTypeText(0, fullWord)
+    AutoTypeText(0, fullWord)   -- langsung type dari 0 sampai selesai
     log("Done: " .. fullWord)
     Rayfield:Notify({ Title = "Done", Content = fullWord, Duration = 1 })
 end
@@ -150,20 +125,10 @@ local Window = Rayfield:CreateWindow({
 
 local Main = Window:CreateTab("Main", 4483362458)
 
+-- Hanya 1 tombol
 Main:CreateButton({
-    Name = "✨ Auto CurrentWord",
+    Name = "🔀 Random Type",
     Callback = autoSolveCurrentWord
-})
-
-Main:CreateButton({
-    Name = "🔄 Reset Used Words",
-    Callback = function()
-        -- kosongkan semua used (simple reset)
-        -- karena kita tidak pakai usedWords array, kita cuma reset logika manual
-        -- jika nanti kamu ingin pakai usedWords, tambahkan di sini
-        Rayfield:Notify({ Title = "Reset", Content = "Used words reset", Duration = 2 })
-        log("Used words reset")
-    end
 })
 
 -- F8 hotkey
