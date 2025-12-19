@@ -43,7 +43,7 @@ local function AutoTypeText(alreadyTyped, fullWord)
         local char = remaining:sub(i, i):lower()
 
         -- 15% typo chance
-        if char ~= " " and math.random() < 0.15 then
+        if char ~= " " and math.random() < 0.05 then
             local typoKeys = {Enum.KeyCode.J, Enum.KeyCode.K, Enum.KeyCode.L,
                               Enum.KeyCode.U, Enum.KeyCode.I, Enum.KeyCode.O}
             local typo = typoKeys[math.random(1, #typoKeys)]
