@@ -1,5 +1,5 @@
--- Random Word Typer - Plain Text + Clear Button
--- Updated: Removed JSON, now reads plain text (.txt)
+-- Random Word Typer - Plain Text + Clear Button + Auto Current
+-- Updated: Removed JSON, now reads plain text (.txt) + one-click auto-solve CurrentWord
 
 local Words = {}
 local usedWords = {}
@@ -36,13 +36,13 @@ local function AutoTypeText(alreadyTyped, fullWord)
 
     local vim = game:GetService("VirtualInputManager")
     local remaining = fullWord:sub(#alreadyTyped + 1)
-    local typedCount = 0        -- hitung berapa karakter yang benar-benar terkirim
+    local typedCount = 0
     local i = 1
 
     while i <= #remaining do
         local char = remaining:sub(i, i):lower()
 
-        -- 15% typo chance
+        -- 5% typo chance
         if char ~= " " and math.random() < 0.05 then
             local typoKeys = {Enum.KeyCode.J, Enum.KeyCode.K, Enum.KeyCode.L,
                               Enum.KeyCode.U, Enum.KeyCode.I, Enum.KeyCode.O}
@@ -76,7 +76,7 @@ local function AutoTypeText(alreadyTyped, fullWord)
     task.wait(0.03)
     vim:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
 
-    -- Langsung hapus semua yang baru diketik
+    -- Clear everything typed
     for _ = 1, typedCount + 5 do
         vim:SendKeyEvent(true, Enum.KeyCode.Backspace, false, game)
         task.wait(math.random(30, 50) / 1000)
@@ -86,45 +86,30 @@ local function AutoTypeText(alreadyTyped, fullWord)
 end
 
 local function isValidWord(word)
-    if word:match("^[a-zA-Z]+$") == nil then
-        return false
-    end
-
-    -- Cegah huruf yang sama di awal lebih dari 2 kali
-    local firstThree = word:sub(1, 2)
-    if #firstThree == 3 and firstThree:match("^(.)\1\1$") then
-        return false
-    end
-
+    if word:match("^[a-zA-Z]+$") == nil then return false end
+    local firstThree = word:sub(1, 3)
+    if #firstThree == 3 and firstThree:match("^(.)\1\1$") then return false end
     return true
 end
 
--- Load words from plain text (.txt)
+-- Load words from plain text
 local function LoadWords()
     if loaded then return end
-
     local reqFunc = getRequestFunction()
-    if not reqFunc then
-        warn("[RandomWordTyper] No HTTP function available.")
-        return
-    end
+    if not reqFunc then warn("[RandomWordTyper] No HTTP function available.") return end
 
     local ok, result = pcall(function()
         local res = reqFunc({
-            Url = "https://raw.githubusercontent.com/rakkgurame-glitch/a/refs/heads/main/words_alpha%20(1).txt", -- ganti ini dengan link file .txt kamu
+            Url = "https://raw.githubusercontent.com/rakkgurame-glitch/a/refs/heads/main/words_alpha%20(1).txt",
             Method = "GET"
         })
         return (type(res) == "table" and res.Body) or res
     end)
 
-    if not ok or not result then
-        warn("[RandomWordTyper] HTTP fetch failed:", result)
-        return
-    end
+    if not ok or not result then warn("[RandomWordTyper] HTTP fetch failed:", result) return end
 
-    -- Parse plain text
     for line in result:gmatch("[^\r\n]+") do
-        local word = line:match("^%s*(.-)%s*$") -- trim whitespace
+        local word = line:match("^%s*(.-)%s*$")
         if #word >= minCharacters and #word <= maxCharacters and isValidWord(word) then
             table.insert(Words, word:lower())
         end
@@ -133,10 +118,9 @@ local function LoadWords()
     loaded = #Words > 0
     print("[RandomWordTyper] Loaded", #Words, "words from plain text.")
 end
-
 spawn(LoadWords)
 
--- === GUI ===
+-- GUI
 local screen = Instance.new("ScreenGui")
 screen.Name = "RandomWordTyperGUI"
 screen.ResetOnSpawn = false
@@ -144,8 +128,8 @@ screen.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 pcall(function() screen.Parent = game.CoreGui end)
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 300, 0, 250)
-frame.Position = UDim2.new(0.5, -150, 0.5, -125)
+frame.Size = UDim2.new(0, 300, 0, 320)
+frame.Position = UDim2.new(0.5, -150, 0.5, -160)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 frame.Active = true
 frame.Draggable = true
@@ -158,7 +142,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 30)
 title.Position = UDim2.new(0, 0, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "Random Word Typer (JSON)"
+title.Text = "Random Word Typer"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 16
@@ -176,10 +160,8 @@ searchBox.Parent = frame
 Instance.new("UICorner", searchBox).CornerRadius = UDim.new(0, 8)
 
 searchBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed then
-        if _G.RandomButtonRef then
-            _G.RandomButtonRef.MouseButton1Click:Fire()
-        end
+    if enterPressed and _G.RandomButtonRef then
+        _G.RandomButtonRef.MouseButton1Click:Fire()
     end
 end)
 
@@ -195,9 +177,21 @@ randomButton.Parent = frame
 Instance.new("UICorner", randomButton).CornerRadius = UDim.new(0, 8)
 _G.RandomButtonRef = randomButton
 
+-- Auto Current Button
+local autoBtn = Instance.new("TextButton")
+autoBtn.Size = UDim2.new(1, -20, 0, 40)
+autoBtn.Position = UDim2.new(0, 10, 0, 130)
+autoBtn.BackgroundColor3 = Color3.fromRGB(60, 160, 240)
+autoBtn.Text = "✨ Auto Current"
+autoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+autoBtn.Font = Enum.Font.GothamBold
+autoBtn.TextSize = 16
+autoBtn.Parent = frame
+Instance.new("UICorner", autoBtn).CornerRadius = UDim.new(0, 8)
+
 local resetButton = Instance.new("TextButton")
 resetButton.Size = UDim2.new(1, -20, 0, 30)
-resetButton.Position = UDim2.new(0, 10, 0, 135)
+resetButton.Position = UDim2.new(0, 10, 0, 180)
 resetButton.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
 resetButton.Text = "🔄 Reset Used (Current Prefix)"
 resetButton.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -208,18 +202,18 @@ Instance.new("UICorner", resetButton).CornerRadius = UDim.new(0, 8)
 
 local resetAllButton = Instance.new("TextButton")
 resetAllButton.Size = UDim2.new(1, -20, 0, 30)
-resetAllButton.Position = UDim2.new(0, 10, 0, 170)
+resetAllButton.Position = UDim2.new(0, 10, 0, 215)
 resetAllButton.BackgroundColor3 = Color3.fromRGB(180, 60, 60)
 resetAllButton.Text = "🗑️ Reset All Prefixes"
 resetAllButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 resetAllButton.Font = Enum.Font.Gotham
-resetAllButton.TextSize = 12
+resetButton.TextSize = 12
 resetAllButton.Parent = frame
 Instance.new("UICorner", resetAllButton).CornerRadius = UDim.new(0, 8)
 
 local status = Instance.new("TextLabel")
 status.Size = UDim2.new(1, -20, 0, 30)
-status.Position = UDim2.new(0, 10, 0, 210)
+status.Position = UDim2.new(0, 10, 0, 280)
 status.BackgroundTransparency = 1
 status.Text = "Status: Loading words..."
 status.TextColor3 = Color3.fromRGB(200, 255, 200)
@@ -230,7 +224,7 @@ status.Parent = frame
 
 local infoLabel = Instance.new("TextLabel")
 infoLabel.Size = UDim2.new(1, -20, 0, 20)
-infoLabel.Position = UDim2.new(0, 10, 0, 195)
+infoLabel.Position = UDim2.new(0, 10, 0, 260)
 infoLabel.BackgroundTransparency = 1
 infoLabel.Text = "Auto-types only remaining letters"
 infoLabel.TextColor3 = Color3.fromRGB(150, 200, 255)
@@ -239,14 +233,11 @@ infoLabel.TextSize = 10
 infoLabel.TextXAlignment = Enum.TextXAlignment.Center
 infoLabel.Parent = frame
 
--- === Logic ===
+-- Logic
 local function GetRandomWord(input)
     if not loaded then return nil end
     input = input:lower()
-
-    if not usedWords[input] then
-        usedWords[input] = {}
-    end
+    if not usedWords[input] then usedWords[input] = {} end
 
     local pool = {}
     for _, word in ipairs(Words) do
@@ -258,21 +249,14 @@ local function GetRandomWord(input)
     if #pool == 0 then
         for i = #input - 1, 1, -1 do
             local shorter = input:sub(1, i)
-            if not usedWords[shorter] then
-                usedWords[shorter] = {}
-            end
-
+            if not usedWords[shorter] then usedWords[shorter] = {} end
             pool = {}
             for _, word in ipairs(Words) do
                 if word:sub(1, i) == shorter and not usedWords[shorter][word] then
                     table.insert(pool, word)
                 end
             end
-
-            if #pool > 0 then
-                input = shorter
-                break
-            end
+            if #pool > 0 then input = shorter break end
         end
     end
 
@@ -283,22 +267,12 @@ local function GetRandomWord(input)
 end
 
 randomButton.MouseButton1Click:Connect(function()
-    if not loaded then
-        status.Text = "Still loading words..."
-        return
-    end
-
+    if not loaded then status.Text = "Still loading words..." return end
     local input = searchBox.Text:match("^%s*(.-)%s*$")
-    if #input < 1 then
-        status.Text = "Enter a prefix first!"
-        return
-    end
+    if #input < 1 then status.Text = "Enter a prefix first!" return end
 
     local word, actualPrefix = GetRandomWord(input)
-    if not word then
-        status.Text = "No unused words found!"
-        return
-    end
+    if not word then status.Text = "No unused words found!" return end
 
     status.Text = "Typing: " .. word
     AutoTypeText(input, word)
@@ -324,7 +298,7 @@ resetAllButton.MouseButton1Click:Connect(function()
     status.Text = "✅ All prefixes reset!"
 end)
 
--- 🔘 Toggle GUI button (left top)
+-- Toggle GUI
 local toggle = Instance.new("TextButton")
 toggle.Name = "Toggle"
 toggle.Size = UDim2.new(0, 50, 0, 50)
@@ -337,15 +311,53 @@ toggle.TextSize = 20
 toggle.Parent = screen
 Instance.new("UICorner", toggle).CornerRadius = UDim.new(0, 10)
 
--- Toggle visibility
 local guiEnabled = false
 frame.Visible = false
-
 toggle.MouseButton1Click:Connect(function()
     guiEnabled = not guiEnabled
     frame.Visible = guiEnabled
     toggle.Text = guiEnabled and "❌" or "🔀"
 end)
 
-print("✅ Random Word Typer (JSON + Clear) loaded!")
-print("💡 Use '⌫' button in top-right to send 15 backspaces.")
+--------------------------------------------------------------------
+-- AUTO CURRENT FEATURE
+--------------------------------------------------------------------
+local function getCurrentWordLabel()
+    local p = game:GetService("Players").LocalPlayer
+    local ok, gui = pcall(function()
+        return p.PlayerGui:WaitForChild("InGame",5)
+                           :WaitForChild("Frame",5)
+                           :WaitForChild("CurrentWord",5)
+    end)
+    return ok and gui or nil
+end
+
+local function autoSolveCurrentWord()
+    local label = getCurrentWordLabel()
+    if not label then
+        status.Text = "CurrentWord label tidak ditemukan!"
+        warn("[RWT] CurrentWord not found")
+        return
+    end
+
+    local fullWord = label.Text:lower()
+    while fullWord == "" or fullWord == "..." do
+        task.wait()
+        fullWord = label.Text:lower()
+    end
+
+    status.Text = "Auto-solving: " .. fullWord
+    AutoTypeText(0, fullWord)
+    status.Text = "Selesai: " .. fullWord
+end
+
+autoBtn.MouseButton1Click:Connect(autoSolveCurrentWord)
+
+-- Hotkey F8
+game:GetService("UserInputService").InputBegan:Connect(function(inp,g)
+    if g then return end
+    if inp.KeyCode == Enum.KeyCode.F8 then autoSolveCurrentWord() end
+end)
+
+print("✅ Random Word Typer (Plain Text + Auto Current) loaded!")
+print("💡 Tekan tombol ✨ Auto Current atau F8 untuk langsung selesaikan CurrentWord.")
