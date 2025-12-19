@@ -1,8 +1,8 @@
--- ✅ Random Word Typer - Full Auto + RTaO_UI + Complete Logs
--- ✅ Semua error & status akan muncul di Output + Notification
+-- ✅ Random Word Typer - Full Auto + Rayfield UI + Complete Logs
+-- ✅ Tidak perlu ketik prefix. Tinggal klik tombol.
 
--- Load UI lib
-local UI = loadstring(game:HttpGet("https://raw.githubusercontent.com/RTaOexe1/rtao_dev/refs/heads/main/RTaO_UI_1.lua"))()
+-- Load Rayfield
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/main/source.lua'))()
 
 -- Services
 local Players = game:GetService("Players")
@@ -18,34 +18,26 @@ local minLen, maxLen = 3, 12
 
 math.randomseed(tick())
 
--- Logger functions
+-- Logger
 local function log(msg)
     print("[RWT] " .. msg)
 end
-
-local function warnLog(msg)
-    warn("[RWT] WARNING: " .. msg)
-end
-
-local function errorLog(msg)
+local function errLog(msg)
     warn("[RWT] ERROR: " .. msg)
-    UI:Notification("Error", msg, 3)
+    Rayfield:Notify({ Title = "Error", Content = msg, Duration = 3 })
 end
 
 -- HTTP loader
-local function getRequest()
+local function getReq()
     return (syn and syn.request) or (http and http.request) or http_request or request or nil
 end
 
 local function LoadWords()
     if loaded then return end
-    local req = getRequest()
-    if not req then
-        errorLog("No HTTP function available")
-        return
-    end
+    local req = getReq()
+    if not req then errLog("No HTTP function"); return end
 
-    log("Loading words from GitHub...")
+    log("Loading words...")
     local ok, res = pcall(function()
         return req({
             Url = "https://raw.githubusercontent.com/rakkgurame-glitch/a/refs/heads/main/words_alpha%20(1).txt",
@@ -53,53 +45,40 @@ local function LoadWords()
         }).Body
     end)
 
-    if not ok or not res or type(res) ~= "string" then
-        errorLog("Failed to load words: " .. tostring(res))
-        return
-    end
+    if not ok or not res then errLog("Load failed: " .. tostring(res)); return end
 
-    local count = 0
+    local c = 0
     for line in res:gmatch("[^\r\n]+") do
-        local word = line:match("^%s*(.-)%s*$"):lower()
-        if #word >= minLen and #word <= maxLen and word:match("^[a-z]+$") then
-            table.insert(Words, word)
-            count = count + 1
+        local w = line:match("^%s*(.-)%s*$"):lower()
+        if #w >= minLen and #w <= maxLen and w:match("^[a-z]+$") then
+            table.insert(Words, w); c = c + 1
         end
     end
-
-    loaded = count > 0
-    log("Loaded " .. count .. " words")
-    if loaded then
-        UI:Notification("Ready", "Words loaded: " .. count, 2)
-    else
-        errorLog("No valid words found in file")
-    end
+    loaded = c > 0
+    log("Loaded " .. c .. " words")
+    Rayfield:Notify({ Title = "Ready", Content = c .. " words loaded", Duration = 2 })
 end
 spawn(LoadWords)
 
 -- Auto typer
 local function AutoType(word)
-    log("TYPING: \"" .. word .. "\"")
+    log('TYPING: "' .. word .. '"')
     for i = 1, #word do
-        local char = word:sub(i, i):lower()
-        local key = Enum.KeyCode[char:upper()]
+        local key = Enum.KeyCode[word:sub(i, i):upper()]
         if key then
             Vim:SendKeyEvent(true, key, false, game)
             task.wait(math.random(40, 80) / 1000)
             Vim:SendKeyEvent(false, key, false, game)
             task.wait(math.random(40, 80) / 1000)
-        else
-            warnLog("Unsupported character: " .. char)
         end
     end
-    task.wait(0.05)
     Vim:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
     task.wait(0.05)
     Vim:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
-    log("DONE: \"" .. word .. "\"")
+    log('DONE: "' .. word .. '"')
 end
 
--- CurrentWord scanner
+-- CurrentWord
 local function GetCurrentWordLabel()
     local ok, gui = pcall(function()
         return lp.PlayerGui:WaitForChild("InGame", 5)
@@ -107,12 +86,11 @@ local function GetCurrentWordLabel()
                            :WaitForChild("CurrentWord", 5)
     end)
     if ok and gui then
-        log("CurrentWord = '" .. gui.Text .. "' at " .. gui:GetFullName())
+        log('CurrentWord = "' .. gui.Text .. '" at ' .. gui:GetFullName())
         return gui
     else
-        errorLog("CurrentWord label not found")
-        -- Dump PlayerGui children
-        warn("=== PlayerGui contents ===")
+        errLog("CurrentWord label not found")
+        warn("=== PlayerGui dump ===")
         for _, v in ipairs(lp.PlayerGui:GetChildren()) do
             warn("  - " .. v.Name .. " (" .. v.ClassName .. ")")
         end
@@ -120,62 +98,62 @@ local function GetCurrentWordLabel()
     end
 end
 
--- UI
-local win = UI:CreateWindow("Random Word Typer", Vector2.new(300, 240), Enum.KeyCode.RightControl)
-local main = win:CreateTab("Main")
-local status = main:CreateLabel("Status: Loading words...")
+-- Rayfield UI
+local Window = Rayfield:CreateWindow({
+    Name = "Random Word Typer",
+    LoadingTitle = "Loading script...",
+    LoadingSubtitle = "by kimi",
+    ConfigurationSaving = { Enabled = false },
+    DisableRayfieldPrompts = true,
+    DisableBuildWarnings = false,
+})
+
+local Main = Window:CreateTab("Main", 4483362458)
+
+local status = Main:CreateLabel("Status: Loading words...")
 
 spawn(function()
     while not loaded do task.wait() end
-    status.Text = "Status: Ready (" .. #Words .. " words)"
+    status:Set("Status: Ready (" .. #Words .. " words)")
 end)
 
--- Auto Random
-main:CreateButton("🔀 Auto Random Type", function()
-    if not loaded then
-        errorLog("Words not loaded yet")
-        return
-    end
-    local word = nil
-    local attempts = 0
-    while not word and attempts < 100 do
-        local pick = Words[math.random(1, #Words)]
-        if not usedWords[pick] then
-            word = pick
-            usedWords[pick] = true
+Main:CreateButton({
+    Name = "🔀 Auto Random Type",
+    Callback = function()
+        if not loaded then errLog("Words not loaded yet"); return end
+        local word = nil
+        for _ = 1, 100 do
+            local pick = Words[math.random(1, #Words)]
+            if not usedWords[pick] then word = pick; usedWords[pick] = true; break end
         end
-        attempts = attempts + 1
+        if not word then errLog("All words used"); return end
+        Rayfield:Notify({ Title = "Typing", Content = word, Duration = 1 })
+        AutoType(word)
     end
-    if not word then
-        errorLog("All words used (reset belum ada)")
-        return
-    end
-    UI:Notification("Typing", word, 1)
-    AutoType(word)
-end)
+})
 
--- Auto Current
-main:CreateButton("✨ Auto CurrentWord", function()
-    local label = GetCurrentWordLabel()
-    if label then
-        local word = label.Text:lower()
-        if #word > 0 and word ~= "..." then
-            UI:Notification("Typing CurrentWord", word, 1)
-            AutoType(word)
-        else
-            errorLog("CurrentWord is empty or '...'")
+Main:CreateButton({
+    Name = "✨ Auto CurrentWord",
+    Callback = function()
+        local label = GetCurrentWordLabel()
+        if label then
+            local w = label.Text:lower()
+            if #w > 0 and w ~= "..." then
+                Rayfield:Notify({ Title = "Typing CurrentWord", Content = w, Duration = 1 })
+                AutoType(w)
+            else
+                errLog("CurrentWord is empty or '...'")
+            end
         end
     end
-end)
+})
 
 -- F8 hotkey
 UserInput.InputBegan:Connect(function(inp, g)
     if g then return end
     if inp.KeyCode == Enum.KeyCode.F8 then
         local label = GetCurrentWordLabel()
-        if label then
-            AutoType(label.Text:lower())
-        end
+        if label then AutoType(label.Text:lower()) end
     end
 end)
 
@@ -188,4 +166,4 @@ spawn(function()
 end)
 
 log("Script loaded. UI ready. Press F8 or use buttons.")
-UI:Notification("Script Loaded", "Press F8 or use buttons", 2)
+Rayfield:Notify({ Title = "Script Loaded", Content = "Press F8 or use buttons", Duration = 2 })
